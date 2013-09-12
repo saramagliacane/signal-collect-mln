@@ -5,7 +5,7 @@ import scala.collection.immutable.Stream.consWrapper
 
 class Factor[Value](
   val probabilities: Map[Value, Double] = Map[Value, Double]())
-  extends Function1[Value, Double] {
+    extends Function1[Value, Double] {
 
   def addValue(e: Value, probability: Double): Factor[Value] = {
     assert(probability >= 0)
@@ -44,17 +44,6 @@ class Factor[Value](
 
   private lazy val sum = probabilities.values.sum
 
-  override def toString = {
-    val sb = new StringBuilder
-    for (t <- probabilities) {
-      t match {
-        case (event, probability) =>
-          sb.append(s"Event $event: $probability\n")
-      }
-    }
-    sb.toString
-  }
-
   def *(that: Factor[Value]): Factor[Value] = {
     forEventsInFactors(intersection(that), that, _ * _, MultiplicativeIdentity.asInstanceOf[Factor[Value]])
   }
@@ -88,6 +77,24 @@ class Factor[Value](
   private def intersection(that: Factor[Value]): Set[Value] = probabilities.keySet.intersect(that.probabilities.keySet)
 
   private def union(that: Factor[Value]): Set[Value] = probabilities.keySet.union(that.probabilities.keySet)
+
+  override def toString = {
+    val sb = new StringBuilder
+    for (t <- probabilities) {
+      t match {
+        case (event, probability) =>
+          sb.append(s"Value $event: $probability\n")
+      }
+    }
+    sb.toString
+  }
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case d: Distribution => probabilities.equals(d.probabilities)
+      case other           => false
+    }
+  }
 
 }
 
