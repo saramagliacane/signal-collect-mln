@@ -7,7 +7,7 @@ import com.signalcollect._
  * @param id
  * @param initialState
  */
-class FactorVertex[Id](id: Id, initialState: Factor) extends DataGraphVertex(id, initialState) {
-  type Signal = Factor
-  def collect = signals.foldLeft(MultiplicativeIdentity: Factor)(_ * _)
+class FactorVertex[Id](id: Id, initialState: Factor[Int]) extends DataGraphVertex(id, initialState) {
+  type Signal = Factor[Int]
+  def collect = signals.foldLeft(MultiplicativeIdentity.asInstanceOf[Factor[Int]])(_ * _)
 }
