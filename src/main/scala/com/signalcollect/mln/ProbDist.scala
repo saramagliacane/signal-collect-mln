@@ -80,8 +80,9 @@ case class Factor(
   }
 
   private def forEventsInFactors(events: Set[Event], that: Factor, op: (Double, Double) => Double, neutral: Factor): Factor = {
-    if (Factor.this.equals(neutral)) { that }
-    else if (that.equals(neutral)) { this } else {
+    if (Factor.this.equals(neutral)) that
+    else if (that.equals(neutral)) this
+    else {
       val newEventProbabilities = events map (
         event => (event, op(eventProbabilities(event), that.eventProbabilities(event))))
       Factor(newEventProbabilities.toMap)
@@ -93,11 +94,9 @@ case class Factor(
   private def union(that: Factor): Set[Event] = eventProbabilities.keySet.union(that.eventProbabilities.keySet)
 
   def join(that: Factor): Factor = {
-    if (Factor.this.equals(JoinIdentity)) {
-      that
-    } else if (that.equals(JoinIdentity)) {
-      this
-    } else {
+    if (Factor.this.equals(JoinIdentity)) that
+    else if (that.equals(JoinIdentity)) this
+    else {
       val composite = for {
         key1 <- eventProbabilities.keys
         key2 <- that.eventProbabilities.keys
