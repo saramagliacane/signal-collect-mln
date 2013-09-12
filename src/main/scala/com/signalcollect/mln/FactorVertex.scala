@@ -9,5 +9,5 @@ import com.signalcollect._
  */
 class FactorVertex[Id](id: Id, initialState: Factor) extends DataGraphVertex(id, initialState) {
   type Signal = Factor
-  def collect = signals.foldLeft(MultiplicativeIdentity: Factor)(_.product(_))
+  def collect = signals.foldLeft(MultiplicativeIdentity: Factor)(_ * _)
 }

@@ -63,25 +63,40 @@ case class Factor(
     sb.toString
   }
 
-  def product(that: Factor): Factor = {
-    if (Factor.this.equals(MultiplicativeIdentity)) {
-      that
-    } else if (that.equals(MultiplicativeIdentity)) {
-      Factor.this
-    } else {
-      val keysIntersect = eventProbabilities.keySet.intersect(that.eventProbabilities.keySet)
-      val newEventProbabilities = keysIntersect.map { key =>
-        (key, eventProbabilities(key) * that.eventProbabilities(key))
-      }.toMap
-      Factor(newEventProbabilities)
+  def *(that: Factor): Factor = {
+    forEventsInFactors(intersection(that), that, _ * _, MultiplicativeIdentity)
+  }
+
+  def /(that: Factor): Factor = {
+    forEventsInFactors(intersection(that), that, _ / _, MultiplicativeIdentity)
+  }
+
+  def +(that: Factor): Factor = {
+    forEventsInFactors(intersection(that), that, _ + _, AdditiveIdentity)
+  }
+
+  def -(that: Factor): Factor = {
+    forEventsInFactors(intersection(that), that, _ - _, AdditiveIdentity)
+  }
+
+  private def forEventsInFactors(events: Set[Event], that: Factor, op: (Double, Double) => Double, neutral: Factor): Factor = {
+    if (Factor.this.equals(neutral)) { that }
+    else if (that.equals(neutral)) { this } else {
+      val newEventProbabilities = events map (
+        event => (event, op(eventProbabilities(event), that.eventProbabilities(event))))
+      Factor(newEventProbabilities.toMap)
     }
   }
 
+  private def intersection(that: Factor): Set[Event] = eventProbabilities.keySet.intersect(that.eventProbabilities.keySet)
+
+  private def union(that: Factor): Set[Event] = eventProbabilities.keySet.union(that.eventProbabilities.keySet)
+
   def join(that: Factor): Factor = {
-    if (Factor.this.equals(MultiplicativeIdentity)) {
+    if (Factor.this.equals(JoinIdentity)) {
       that
-    } else if (that.equals(MultiplicativeIdentity)) {
-      Factor.this
+    } else if (that.equals(JoinIdentity)) {
+      this
     } else {
       val composite = for {
         key1 <- eventProbabilities.keys
@@ -90,7 +105,12 @@ case class Factor(
       Factor(composite.toMap)
     }
   }
+
 }
 
-object MultiplicativeIdentity extends Factor
+object MultiplicativeIdentity extends Factor(Map[Event, Double]().withDefaultValue(1))
+
+object AdditiveIdentity extends Factor(Map[Event, Double]().withDefaultValue(0))
+
+object JoinIdentity extends Factor
 
