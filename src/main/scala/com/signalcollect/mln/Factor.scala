@@ -1,8 +1,5 @@
 package com.signalcollect.mln
 
-import scala.util.Random
-import scala.collection.immutable.Stream.consWrapper
-
 class Factor[Value](
   val probabilities: Map[Value, Double] = Map[Value, Double]())
     extends Function1[Value, Double] {

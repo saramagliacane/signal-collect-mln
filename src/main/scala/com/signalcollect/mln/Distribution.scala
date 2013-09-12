@@ -57,7 +57,7 @@ class Distribution(
   }
 
   /**
-   * Returns the marginal distribution for the passed variable.
+   * Returns the marginal distribution for @variable.
    */
   def marginalDistribution(variable: Variable): Distribution = {
     val groupedByBinding = probabilities.groupBy {
