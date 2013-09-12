@@ -11,6 +11,7 @@ class DistributionSpec extends SpecificationWithJUnit with Serializable {
   sequential
 
   "Distribution" should {
+
     "marginalize correctly" in {
       val distA = bernoulli("a", 0.6)
       val distB = bernoulli("b", 0.9)

@@ -32,10 +32,41 @@ class Distribution(
 
   type Config = Set[BoundVariable]
 
-  override def addValue(e: Set[BoundVariable], probability: Double): Distribution = {
-    assert(probability >= 0)
-    val newProbabilities = probabilities + ((e, probability))
-    new Distribution(newProbabilities)
+  protected override def newInstance(p: Map[Config, Double]): this.type =
+    (new Distribution(p)).asInstanceOf[this.type]
+
+  def *(that: Distribution): Distribution = {
+    forValues(intersection(that), that, _ * _, MultiplicativeIdentity.forType[Distribution])
+  }
+
+  def /(that: Distribution): Distribution = {
+    forValues(intersection(that), that, _ / _, MultiplicativeIdentity.forType[Distribution])
+  }
+
+  def +(that: Distribution): Distribution = {
+    forValues(intersection(that), that, _ + _, AdditiveIdentity.forType[Distribution])
+  }
+
+  def -(that: Distribution): Distribution = {
+    forValues(intersection(that), that, _ - _, AdditiveIdentity.forType[Distribution])
+  }
+
+  private def forValues(
+    values: Set[Config],
+    that: Distribution,
+    op: (Double, Double) => Double,
+    neutral: Distribution): Distribution = {
+    if (this.equals(neutral)) that
+    else if (that.equals(neutral)) this
+    else {
+      val newEventProbabilities = values map {
+        event =>
+          val p1 = probabilities(event)
+          val p2 = that.probabilities(event)
+          (event, op(p1, p2))
+      }
+      newInstance(newEventProbabilities.toMap)
+    }
   }
 
   /**
@@ -72,4 +103,14 @@ class Distribution(
 
 }
 
-object JoinIdentity extends Distribution
+object JoinIdentity extends Factor {
+  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
+}
+
+object MultiplicativeIdentity extends Factor(Map().withDefaultValue(1)) {
+  def forType[T <: Factor[_]] = MultiplicativeIdentity.asInstanceOf[T]
+}
+
+object AdditiveIdentity extends Factor(Map().withDefaultValue(0)) {
+  def forType[T <: Factor[_]] = AdditiveIdentity.asInstanceOf[T]
+}

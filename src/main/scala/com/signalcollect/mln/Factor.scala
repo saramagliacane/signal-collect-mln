@@ -4,17 +4,20 @@ class Factor[Value](
   val probabilities: Map[Value, Double] = Map[Value, Double]())
     extends Function1[Value, Double] {
 
-  def addValue(e: Value, probability: Double): Factor[Value] = {
+  protected def newInstance(p: Map[Value, Double]): this.type =
+    (new Factor(p)).asInstanceOf[this.type]
+
+  def addValue(e: Value, probability: Double): this.type = {
     assert(probability >= 0)
     val newProbabilities = probabilities + ((e, probability))
-    new Factor(newProbabilities)
+    newInstance(newProbabilities)
   }
 
   def apply(e: Value): Double = {
     probabilities.get(e).getOrElse(0)
   }
 
-  def normalize: Factor[Value] = {
+  def normalize: this.type = {
     if (!isNormalized) {
       val probabilitySum = probabilities.values.sum
       val newProbabilities = {
@@ -31,9 +34,43 @@ class Factor[Value](
           }
         }
       }
-      new Factor(newProbabilities)
+      newInstance(newProbabilities)
     } else {
       this
+    }
+  }
+
+  def *(that: Factor[Value]): Factor[Value] = {
+    forValues(intersection(that), that, _ * _, MultiplicativeIdentity.forType[Factor[Value]])
+  }
+
+  def /(that: Factor[Value]): Factor[Value] = {
+    forValues(intersection(that), that, _ / _, MultiplicativeIdentity.forType[Factor[Value]])
+  }
+
+  def +(that: Factor[Value]): Factor[Value] = {
+    forValues(intersection(that), that, _ + _, AdditiveIdentity.forType[Factor[Value]])
+  }
+
+  def -(that: Factor[Value]): Factor[Value] = {
+    forValues(intersection(that), that, _ - _, AdditiveIdentity.forType[Factor[Value]])
+  }
+
+  private def forValues(
+    values: Set[Value],
+    that: Factor[Value],
+    op: (Double, Double) => Double,
+    neutral: Factor[Value]): Factor[Value] = {
+    if (this.equals(neutral)) that
+    else if (that.equals(neutral)) this
+    else {
+      val newEventProbabilities = values map {
+        event =>
+          val p1 = probabilities(event)
+          val p2 = that.probabilities(event)
+          (event, op(p1, p2))
+      }
+      newInstance(newEventProbabilities.toMap)
     }
   }
 
@@ -41,39 +78,11 @@ class Factor[Value](
 
   private lazy val sum = probabilities.values.sum
 
-  def *(that: Factor[Value]): Factor[Value] = {
-    forEventsInFactors(intersection(that), that, _ * _, MultiplicativeIdentity.asInstanceOf[Factor[Value]])
-  }
+  protected def intersection(that: Factor[Value]): Set[Value] =
+    probabilities.keySet.intersect(that.probabilities.keySet)
 
-  def /(that: Factor[Value]): Factor[Value] = {
-    forEventsInFactors(intersection(that), that, _ / _, MultiplicativeIdentity.asInstanceOf[Factor[Value]])
-  }
-
-  def +(that: Factor[Value]): Factor[Value] = {
-    forEventsInFactors(intersection(that), that, _ + _, AdditiveIdentity.asInstanceOf[Factor[Value]])
-  }
-
-  def -(that: Factor[Value]): Factor[Value] = {
-    forEventsInFactors(intersection(that), that, _ - _, AdditiveIdentity.asInstanceOf[Factor[Value]])
-  }
-
-  private def forEventsInFactors(events: Set[Value], that: Factor[Value], op: (Double, Double) => Double, neutral: Factor[Value]): Factor[Value] = {
-    if (Factor.this.equals(neutral)) that
-    else if (that.equals(neutral)) this
-    else {
-      val newEventProbabilities = events map {
-        event =>
-          val p1 = probabilities(event)
-          val p2 = that.probabilities(event)
-          (event, op(p1, p2))
-      }
-      new Factor(newEventProbabilities.toMap)
-    }
-  }
-
-  private def intersection(that: Factor[Value]): Set[Value] = probabilities.keySet.intersect(that.probabilities.keySet)
-
-  private def union(that: Factor[Value]): Set[Value] = probabilities.keySet.union(that.probabilities.keySet)
+  protected def union(that: Factor[Value]): Set[Value] =
+    probabilities.keySet.union(that.probabilities.keySet)
 
   override def toString = {
     val sb = new StringBuilder
@@ -94,7 +103,3 @@ class Factor[Value](
   }
 
 }
-
-object MultiplicativeIdentity extends Factor[Any](Map().withDefaultValue(1))
-
-object AdditiveIdentity extends Factor[Any](Map().withDefaultValue(0))

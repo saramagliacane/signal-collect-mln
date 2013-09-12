@@ -26,4 +26,5 @@ class FactorSpec extends SpecificationWithJUnit with Serializable {
     }
 
   }
+
 }
