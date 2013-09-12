@@ -1,18 +1,14 @@
 package com.signalcollect.mln
 
 object Variable {
-  def apply(name: String): UnboundVariable = new UnboundVariable(name)
-  def apply(name: String, value: Any): BoundVariable = new BoundVariable(name, value)
+  def apply(name: String) = new UnboundVariable(name)
+  def apply(name: String, value: Any) = new BoundVariable(name, value)
 }
 
 trait Variable {
   def name: String
-  def bind(value: Any): BoundVariable = {
-    new BoundVariable(name, value)
-  }
-  def unbound: UnboundVariable = {
-    new UnboundVariable(name)
-  }
+  def bind(value: Any) = new BoundVariable(name, value)
+  def unbound = new UnboundVariable(name)
 }
 
 case class UnboundVariable(name: String) extends Variable
@@ -42,6 +38,10 @@ class Distribution(
     new Distribution(newProbabilities)
   }
 
+  /**
+   * Creates a joint distribution under the assumption that @this and
+   * @that are independent.
+   */
   def join(that: Distribution): Distribution = {
     if (this.equals(JoinIdentity)) that
     else if (that.equals(JoinIdentity)) this
