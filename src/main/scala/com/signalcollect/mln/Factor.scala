@@ -10,7 +10,7 @@ class Factor[Value](
   def addValue(e: Value, probability: Double): Factor[Value] = {
     assert(probability >= 0)
     val newProbabilities = probabilities + ((e, probability))
-    Factor(newProbabilities)
+    new Factor(newProbabilities)
   }
 
   def apply(e: Value): Double = {
@@ -34,7 +34,7 @@ class Factor[Value](
           }
         }
       }
-      Factor(newProbabilities)
+      new Factor(newProbabilities)
     } else {
       this
     }
@@ -81,7 +81,7 @@ class Factor[Value](
           val p2 = that.probabilities(event)
           (event, op(p1, p2))
       }
-      Factor(newEventProbabilities.toMap)
+      new Factor(newEventProbabilities.toMap)
     }
   }
 

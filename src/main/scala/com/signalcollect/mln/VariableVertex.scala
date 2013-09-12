@@ -7,7 +7,7 @@ import com.signalcollect._
  * @param id
  * @param initialState
  */
-class VariableVertex[Id](id: Id, initialState: Distribution[Int]) extends DataGraphVertex(id, initialState) {
-  type Signal = Distribution[Int]
-  def collect = signals.foldLeft(JoinIdentity.asInstanceOf[Distribution[Int]])(_ join _)
+class VariableVertex[Id](id: Id, initialState: Distribution) extends DataGraphVertex(id, initialState) {
+  type Signal = Distribution
+  def collect = signals.foldLeft(JoinIdentity: Distribution)(_ join _)
 }
