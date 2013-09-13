@@ -4,6 +4,7 @@ import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
 import Distribution._
+import org.specs2.matcher.Matcher
 
 @RunWith(classOf[JUnitRunner])
 class FactorSpec extends SpecificationWithJUnit with Serializable {
@@ -11,20 +12,45 @@ class FactorSpec extends SpecificationWithJUnit with Serializable {
   sequential
 
   "Factor" should {
+
+    val fA1 = Factor().addValue("a", 0.4)
+    val fA2 = Factor().addValue("a", 0.1)
+    val fB = Factor().addValue("b", 0.1)
+
     "normalize correctly for one value" in {
-      val f = new Factor().addValue("a", 0.4)
-      f("a") === 0.4
-      val fNormalized = f.normalize
-      fNormalized("a") === 1.0
+      fA1.normalize("a") must beApproximately(1.0)
     }
 
     "normalize correctly for two values" in {
-      val f = new Factor().addValue("a", 0.4).addValue("b", 0.1)
-      f("a") === 0.4
-      val fNormalized = f.normalize
-      fNormalized("a") === 0.8
+      val fAB = fA1 + fB
+      fAB.normalize("a") must beApproximately(0.8)
+    }
+
+    "support addition" in {
+      val fAadded = fA1 + fA2
+      fAadded("a") must beApproximately(0.5)
+    }
+
+    "support subtraction" in {
+      val fAsubtracted = fA1 - fA2
+      fAsubtracted("a") must beApproximately(0.3)
+    }
+
+    "support multiplication" in {
+      val fAmultiplied = fA1 * fA2
+      fAmultiplied("a") must beApproximately(0.04)
+    }
+
+    "support division" in {
+      val fAmultiplied = fA1 * fA2
+      val shouldBeA1 = fAmultiplied / fA2
+      val shouldBeA2 = fAmultiplied / fA1
+      shouldBeA1("a") must beApproximately(fA1("a"))
+      shouldBeA2("a") must beApproximately(fA2("a"))
     }
 
   }
+
+  def beApproximately(x: Double) = beCloseTo(x, 0.000000001)
 
 }

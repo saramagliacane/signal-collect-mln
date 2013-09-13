@@ -15,59 +15,35 @@ case class UnboundVariable(name: String) extends Variable
 
 case class BoundVariable(name: String, value: Any) extends Variable
 
+case class Config(boundVars: Set[BoundVariable]) {
+  def combine(other: Config) = Config(boundVars.union(other.boundVars))
+  /**
+   * Requires for the variable to be part of this configuration.
+   */
+  def getVariable(name: String): BoundVariable =
+    boundVars.filter(_.name == name).head
+}
+
 object Distribution {
+
   def bernoulli(name: String, probabilitySuccess: Double): Distribution = {
     val varTrue = Variable(name, true)
     val varFalse = Variable(name, false)
     val probabilityFailure = 1 - probabilitySuccess
-    new Distribution(Map(
-      Set(varTrue) -> probabilitySuccess,
-      Set(varFalse) -> probabilityFailure))
+    new Distribution(Factor(Map(
+      Config(Set(varTrue)) -> probabilitySuccess,
+      Config(Set(varFalse)) -> probabilityFailure)))
   }
+
 }
 
-class Distribution(
-  probabilities: Map[Set[BoundVariable], Double] = Map[Set[BoundVariable], Double]())
-    extends Factor(probabilities) {
+case class Distribution(
+    val f: Factor[Config] = Factor[Config]()) {
 
-  type Config = Set[BoundVariable]
-
-  protected override def newInstance(p: Map[Config, Double]): this.type =
-    (new Distribution(p)).asInstanceOf[this.type]
-
-  def *(that: Distribution): Distribution = {
-    forValues(intersection(that), that, _ * _, MultiplicativeIdentity.forType[Distribution])
-  }
-
-  def /(that: Distribution): Distribution = {
-    forValues(intersection(that), that, _ / _, MultiplicativeIdentity.forType[Distribution])
-  }
-
-  def +(that: Distribution): Distribution = {
-    forValues(intersection(that), that, _ + _, AdditiveIdentity.forType[Distribution])
-  }
-
-  def -(that: Distribution): Distribution = {
-    forValues(intersection(that), that, _ - _, AdditiveIdentity.forType[Distribution])
-  }
-
-  private def forValues(
-    values: Set[Config],
-    that: Distribution,
-    op: (Double, Double) => Double,
-    neutral: Distribution): Distribution = {
-    if (this.equals(neutral)) that
-    else if (that.equals(neutral)) this
-    else {
-      val newEventProbabilities = values map {
-        event =>
-          val p1 = probabilities(event)
-          val p2 = that.probabilities(event)
-          (event, op(p1, p2))
-      }
-      newInstance(newEventProbabilities.toMap)
-    }
-  }
+  def *(that: Distribution) = Distribution(f * that.f)
+  def /(that: Distribution) = Distribution(f / that.f)
+  def +(that: Distribution) = Distribution(f + that.f)
+  def -(that: Distribution) = Distribution(f - that.f)
 
   /**
    * Creates a joint distribution under the assumption that @this and
@@ -78,12 +54,12 @@ class Distribution(
     else if (that.equals(JoinIdentity)) this
     else {
       val composite = for {
-        config1 <- probabilities.keys
-        config2 <- that.probabilities.keys
+        config1 <- f.probabilities.keys
+        config2 <- that.f.probabilities.keys
       } yield (
-        config1.union(config2),
-        probabilities(config1) * that.probabilities(config2))
-      new Distribution(composite.toMap)
+        config1.combine(config2),
+        f.probabilities(config1) * that.f.probabilities(config2))
+      Distribution(Factor(composite.toMap))
     }
   }
 
@@ -91,26 +67,13 @@ class Distribution(
    * Returns the marginal distribution for @variable.
    */
   def marginalDistribution(variable: Variable): Distribution = {
-    val groupedByBinding = probabilities.groupBy {
-      case (config, probability) =>
-        config.filter(_.name == variable.name).head
+    val groupedByBinding = f.probabilities.groupBy {
+      case (config, probability) => config.getVariable(variable.name)
     }
     val marginalProbabilities = groupedByBinding map {
-      case (binding, config) => (Set(binding), config.values.sum)
+      case (binding, config) => (Config(Set(binding)), config.values.sum)
     }
-    new Distribution(marginalProbabilities.toMap)
+    Distribution(Factor(marginalProbabilities.toMap))
   }
 
-}
-
-object JoinIdentity extends Factor {
-  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
-}
-
-object MultiplicativeIdentity extends Factor(Map().withDefaultValue(1)) {
-  def forType[T <: Factor[_]] = MultiplicativeIdentity.asInstanceOf[T]
-}
-
-object AdditiveIdentity extends Factor(Map().withDefaultValue(0)) {
-  def forType[T <: Factor[_]] = AdditiveIdentity.asInstanceOf[T]
 }

@@ -1,23 +1,20 @@
 package com.signalcollect.mln
 
-class Factor[Value](
+case class Factor[Value](
   val probabilities: Map[Value, Double] = Map[Value, Double]())
     extends Function1[Value, Double] {
 
-  protected def newInstance(p: Map[Value, Double]): this.type =
-    (new Factor(p)).asInstanceOf[this.type]
-
-  def addValue(e: Value, probability: Double): this.type = {
+  def addValue(e: Value, probability: Double): Factor[Value] = {
     assert(probability >= 0)
     val newProbabilities = probabilities + ((e, probability))
-    newInstance(newProbabilities)
+    Factor(newProbabilities)
   }
 
   def apply(e: Value): Double = {
     probabilities.get(e).getOrElse(0)
   }
 
-  def normalize: this.type = {
+  def normalize: Factor[Value] = {
     if (!isNormalized) {
       val probabilitySum = probabilities.values.sum
       val newProbabilities = {
@@ -34,7 +31,7 @@ class Factor[Value](
           }
         }
       }
-      newInstance(newProbabilities)
+      Factor(newProbabilities)
     } else {
       this
     }
@@ -49,11 +46,11 @@ class Factor[Value](
   }
 
   def +(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ + _, AdditiveIdentity.forType[Factor[Value]])
+    forValues(union(that), that, _ + _, AdditiveIdentity.forType[Factor[Value]])
   }
 
   def -(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ - _, AdditiveIdentity.forType[Factor[Value]])
+    forValues(union(that), that, _ - _, AdditiveIdentity.forType[Factor[Value]])
   }
 
   private def forValues(
@@ -64,13 +61,15 @@ class Factor[Value](
     if (this.equals(neutral)) that
     else if (that.equals(neutral)) this
     else {
-      val newEventProbabilities = values map {
-        event =>
-          val p1 = probabilities(event)
-          val p2 = that.probabilities(event)
-          (event, op(p1, p2))
+      val newProbabilities = values map {
+        value =>
+          val p1 = probabilities.get(value).getOrElse(0.0)
+          val p2 = that.probabilities.get(value).getOrElse(0.0)
+          val newP = op(p1, p2)
+          assert(newP >= 0)
+          (value, newP)
       }
-      newInstance(newEventProbabilities.toMap)
+      Factor(newProbabilities.toMap)
     }
   }
 
@@ -84,22 +83,16 @@ class Factor[Value](
   protected def union(that: Factor[Value]): Set[Value] =
     probabilities.keySet.union(that.probabilities.keySet)
 
-  override def toString = {
-    val sb = new StringBuilder
-    for (t <- probabilities) {
-      t match {
-        case (event, probability) =>
-          sb.append(s"Value $event: $probability\n")
-      }
-    }
-    sb.toString
-  }
+}
 
-  override def equals(other: Any): Boolean = {
-    other match {
-      case d: Distribution => probabilities.equals(d.probabilities)
-      case other           => false
-    }
-  }
+object JoinIdentity extends Factor {
+  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
+}
 
+object MultiplicativeIdentity extends Factor(Map().withDefaultValue(1)) {
+  def forType[T <: Factor[_]] = MultiplicativeIdentity.asInstanceOf[T]
+}
+
+object AdditiveIdentity extends Factor(Map().withDefaultValue(0)) {
+  def forType[T <: Factor[_]] = AdditiveIdentity.asInstanceOf[T]
 }
