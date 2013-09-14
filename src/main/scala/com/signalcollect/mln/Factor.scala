@@ -91,9 +91,7 @@ case class Factor[Value](
     op: (Double, Double) => Double): Factor[Value] = {
     val newProbabilities = values flatMap {
       value =>
-        val p1 = map.get(value).getOrElse(0.0)
-        val p2 = that.map.get(value).getOrElse(0.0)
-        val newP = op(p1, p2)
+        val newP = op(this(value), that(value))
         // Only store positive probabilities. 
         if (newP > 0) {
           Some((value, newP))
