@@ -1,7 +1,7 @@
 package com.signalcollect.mln
 
 /**
- * Represents a function from instances of Value to Double.
+ * Represents a function from instances of Value to Doubles >= 0.
  * This function is stored inside the map @param map and the 
  * function returns 0 for parameters that are not stored in the map.
  * 
