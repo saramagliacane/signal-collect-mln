@@ -1,31 +1,38 @@
 package com.signalcollect.mln
 
+/**
+ * Represents a function from instances of Value to Double.
+ * This function is stored inside the map @param map and the 
+ * function returns 0 for parameters that are not stored in the map.
+ * 
+ * Factors are immutable and operations on them return new factors. 
+ */
 case class Factor[Value](
-  val probabilities: Map[Value, Double] = Map[Value, Double]())
+  val map: Map[Value, Double] = Map[Value, Double]())
     extends Function1[Value, Double] {
 
   def addValue(e: Value, probability: Double): Factor[Value] = {
     assert(probability >= 0)
-    val newProbabilities = probabilities + ((e, probability))
+    val newProbabilities = map + ((e, probability))
     Factor(newProbabilities)
   }
 
   def apply(e: Value): Double = {
-    probabilities.get(e).getOrElse(0)
+    map.get(e).getOrElse(0)
   }
 
   def normalize: Factor[Value] = {
     if (!isNormalized) {
-      val probabilitySum = probabilities.values.sum
+      val probabilitySum = map.values.sum
       val newProbabilities = {
         if (probabilitySum == 0) {
-          val uniformEventProbability = 1.0 / probabilities.size
-          probabilities map {
+          val uniformEventProbability = 1.0 / map.size
+          map map {
             case (event, _) =>
               (event, uniformEventProbability)
           }
         } else {
-          probabilities map {
+          map map {
             case (event, unnormalizedProbability) =>
               (event, unnormalizedProbability / probabilitySum)
           }
@@ -66,7 +73,7 @@ case class Factor[Value](
   def <->(that: Factor[Value]): Factor[Value] =
     forValues(union(that), that, SoftBool.<->)
   def unary_!(): Factor[Value] = {
-    val newProbabilities = probabilities flatMap {
+    val newProbabilities = map flatMap {
       case (value, probability) =>
         val newP = 1 - probability
         if (newP > 0) {
@@ -84,8 +91,8 @@ case class Factor[Value](
     op: (Double, Double) => Double): Factor[Value] = {
     val newProbabilities = values flatMap {
       value =>
-        val p1 = probabilities.get(value).getOrElse(0.0)
-        val p2 = that.probabilities.get(value).getOrElse(0.0)
+        val p1 = map.get(value).getOrElse(0.0)
+        val p2 = that.map.get(value).getOrElse(0.0)
         val newP = op(p1, p2)
         // Only store positive probabilities. 
         if (newP > 0) {
@@ -99,13 +106,13 @@ case class Factor[Value](
 
   def isNormalized = math.abs(sum - 1.0) < 0.000001
 
-  private lazy val sum = probabilities.values.sum
+  private lazy val sum = map.values.sum
 
   protected def intersection(that: Factor[Value]): Set[Value] =
-    probabilities.keySet.intersect(that.probabilities.keySet)
+    map.keySet.intersect(that.map.keySet)
 
   protected def union(that: Factor[Value]): Set[Value] =
-    probabilities.keySet.union(that.probabilities.keySet)
+    map.keySet.union(that.map.keySet)
 }
 
 object SoftBool {
