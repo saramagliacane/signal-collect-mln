@@ -20,5 +20,7 @@ class DistributionSpec extends SpecificationWithJUnit with Serializable {
       aMarginalized === distA
     }
 
+    //TODO: Add tests for logic stuff and all other join operations.
+    
   }
 }

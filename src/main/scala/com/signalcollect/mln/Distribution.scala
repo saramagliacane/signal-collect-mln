@@ -70,7 +70,7 @@ case class Distribution(
   }
 
   /**
-   * Returns the marginal distribution for @variable.
+   * Returns the marginal distribution for @param variable.
    */
   def marginalFor(variable: Variable): Distribution = {
     val groupedByBinding = f.probabilities.groupBy {
