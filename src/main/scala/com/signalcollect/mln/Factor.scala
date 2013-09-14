@@ -13,8 +13,8 @@ case class Factor[Value](
 
   def addValue(e: Value, probability: Double): Factor[Value] = {
     assert(probability >= 0)
-    val newProbabilities = map + ((e, probability))
-    Factor(newProbabilities)
+    val newMappings = map + ((e, probability))
+    Factor(newMappings)
   }
 
   def apply(e: Value): Double = {
@@ -24,7 +24,7 @@ case class Factor[Value](
   def normalize: Factor[Value] = {
     if (!isNormalized) {
       val probabilitySum = map.values.sum
-      val newProbabilities = {
+      val newMappings = {
         if (probabilitySum == 0) {
           val uniformEventProbability = 1.0 / map.size
           map map {
@@ -38,7 +38,7 @@ case class Factor[Value](
           }
         }
       }
-      Factor(newProbabilities)
+      Factor(newMappings)
     } else {
       this
     }
@@ -73,7 +73,7 @@ case class Factor[Value](
   def <->(that: Factor[Value]): Factor[Value] =
     forValues(union(that), that, SoftBool.<->)
   def unary_!(): Factor[Value] = {
-    val newProbabilities = map flatMap {
+    val newMappings = map flatMap {
       case (value, probability) =>
         val newP = 1 - probability
         if (newP > 0) {
@@ -82,14 +82,14 @@ case class Factor[Value](
           None
         }
     }
-    Factor(newProbabilities.toMap)
+    Factor(newMappings.toMap)
   }
 
   private def forValues(
     values: Set[Value],
     that: Factor[Value],
     op: (Double, Double) => Double): Factor[Value] = {
-    val newProbabilities = values flatMap {
+    val newMappings = values flatMap {
       value =>
         val newP = op(this(value), that(value))
         // Only store positive probabilities. 
@@ -99,7 +99,7 @@ case class Factor[Value](
           None
         }
     }
-    Factor(newProbabilities.toMap)
+    Factor(newMappings.toMap)
   }
 
   def isNormalized = math.abs(sum - 1.0) < 0.000001

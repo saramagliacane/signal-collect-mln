@@ -62,7 +62,7 @@ case class Distribution(
   def &&(that: Distribution) = join(that)(SoftBool.&&)
   def ->(that: Distribution) = join(that)(SoftBool.->)
   def <->(that: Distribution) = join(that)(SoftBool.<->)
-
+  
   /**
    * Creates a joint distribution and merges probabilities with the
    * function @param op.
@@ -78,7 +78,7 @@ case class Distribution(
         config2 <- that.f.map.keys
       } yield (
         config1.combine(config2),
-        op(f.map(config1), that.f.map(config2)))
+        op(f(config1), that.f(config2)))
       Distribution(Factor(composite.toMap))
     }
   }
