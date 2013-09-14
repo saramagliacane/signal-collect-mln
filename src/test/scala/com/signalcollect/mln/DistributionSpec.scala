@@ -27,13 +27,10 @@ class DistributionSpec extends SpecificationWithJUnit with Serializable {
 
     "marginalize correctly" in {
       val joint = distX * distY
-      joint.f.isNormalized === true
       val xMarginalized = joint.marginalFor("x")
-      xMarginalized.f.isNormalized === true
       xMarginalized(xTrue) must beApproximately(distX(xTrue))
       xMarginalized(xFalse) must beApproximately(distX(xFalse))
       val yMarginalized = joint.marginalFor("y")
-      yMarginalized.f.isNormalized === true
       yMarginalized(yTrue) must beApproximately(distY(yTrue))
       yMarginalized(yFalse) must beApproximately(distY(yFalse))
     }

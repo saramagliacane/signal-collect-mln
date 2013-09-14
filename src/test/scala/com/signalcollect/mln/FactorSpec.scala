@@ -13,9 +13,9 @@ class FactorSpec extends SpecificationWithJUnit with Serializable {
 
   "Factor" should {
 
-    val fA1 = Factor().addValue("a", 0.4)
-    val fA2 = Factor().addValue("a", 0.1)
-    val fB = Factor().addValue("b", 0.1)
+    val fA1 = Factor() + ("a", 0.4)
+    val fA2 = Factor() + ("a", 0.1)
+    val fB = Factor() + ("b", 0.1)
 
     "normalize correctly for one value" in {
       fA1.normalize("a") must beApproximately(1.0)
@@ -49,7 +49,6 @@ class FactorSpec extends SpecificationWithJUnit with Serializable {
       shouldBeA2("a") must beApproximately(fA2("a"))
     }
 
-    
     //TODO: Add tests for logic stuff.
   }
 

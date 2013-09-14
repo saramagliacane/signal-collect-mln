@@ -1,22 +1,5 @@
 package com.signalcollect.mln
 
-object Distribution {
-
-  implicit def stringToVar(name: String): UnboundVariable = Variable(name)
-
-  def bernoulli(
-    name: String,
-    probabilitySuccess: Double): Distribution = {
-    val varTrue = Variable(name, true)
-    val varFalse = Variable(name, false)
-    val probabilityFailure = 1 - probabilitySuccess
-    new Distribution(Factor(Map(
-      Config(Set(varTrue)) -> probabilitySuccess,
-      Config(Set(varFalse)) -> probabilityFailure)))
-  }
-
-}
-
 /**
  * Represents a function from configurations to their potentially
  * unnormalized probabilities. The function is stored as the factor
@@ -71,6 +54,23 @@ case class Distribution(
       case (binding, config) => (Config(Set(binding)), config.values.sum)
     }
     Distribution(Factor(marginalProbabilities.toMap))
+  }
+
+}
+
+object Distribution {
+
+  implicit def stringToVar(name: String): UnboundVariable = Variable(name)
+
+  def bernoulli(
+    name: String,
+    probabilitySuccess: Double) = {
+    val varTrue = name boundTo true
+    val varFalse = name boundTo false
+    val probabilityFailure = 1 - probabilitySuccess
+    Distribution(Factor(Map(
+      Config(varTrue) -> probabilitySuccess,
+      Config(varFalse) -> probabilityFailure)))
   }
 
 }

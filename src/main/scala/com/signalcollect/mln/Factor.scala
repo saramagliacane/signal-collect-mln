@@ -8,18 +8,19 @@ package com.signalcollect.mln
  * Factors are immutable and operations on them return new factors.
  */
 case class Factor[Value](
-  val map: Map[Value, Double] = Map[Value, Double]())
+  map: Map[Value, Double] = Map[Value, Double]())
     extends Function1[Value, Double] {
 
-  def addValue(e: Value, probability: Double): Factor[Value] = {
-    assert(probability >= 0)
-    val newMappings = map + ((e, probability))
-    Factor(newMappings)
+  /**
+   * Creates a new factor that returns @param result for parameter
+   * @param parameter.
+   */
+  def +(parameter: Value, result: Double): Factor[Value] = {
+    assert(result >= 0)
+    Factor(map + ((parameter, result)))
   }
 
-  def apply(e: Value): Double = {
-    map.get(e).getOrElse(0)
-  }
+  def apply(e: Value): Double = map.get(e).getOrElse(0)
 
   def normalize: Factor[Value] = {
     if (!isNormalized) {
@@ -44,25 +45,22 @@ case class Factor[Value](
     }
   }
 
-  def *(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ * _)
-  }
-
-  def /(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ / _)
-  }
-
-  def +(that: Factor[Value]): Factor[Value] = {
-    forValues(union(that), that, _ + _)
-  }
-
-  def -(that: Factor[Value]): Factor[Value] = {
-    forValues(union(that), that, _ - _)
-  }
-
   /**
-   * Correspond to boolean logic operations when true is represented
-   * as 1 and false as 0.
+   * These operations correspond to combining the results for each factor
+   * with the respective operation.
+   * @example: f1(a) = 0.5
+   *           f2(a) = 0.2
+   *           f3 = f1 * f2
+   *           f3(a) = 0.5 * 0.2 = 0.1
+   */
+  def *(that: Factor[Value]) = forValues(intersection(that), that, _ * _)
+  def /(that: Factor[Value]) = forValues(intersection(that), that, _ / _)
+  def +(that: Factor[Value]) = forValues(union(that), that, _ + _)
+  def -(that: Factor[Value]) = forValues(union(that), that, _ - _)
+  
+  /**
+   * These operations correspond to boolean logic operations when true is
+   * represented as 1 and false as 0.
    */
   def ||(that: Factor[Value]): Factor[Value] =
     forValues(union(that), that, SoftBool.or)
@@ -115,4 +113,3 @@ case class Factor[Value](
 
   override def toString = map.mkString("\n\t", "\n\t", "\n")
 }
-

@@ -1,10 +1,5 @@
 package com.signalcollect.mln
 
-object Config {
-  implicit def varToConfig(v: BoundVariable) = Config(Set(v))
-  def apply(vs: BoundVariable*): Config = Config(vs.toSet)
-}
-
 /**
  * A configuration consists of a set of bound variables and
  * represents a possible outcome in the context of a probability
@@ -19,4 +14,9 @@ case class Config(boundVars: Set[BoundVariable]) {
     boundVars.filter(_.name == name).head
 
   override def toString = boundVars.mkString(", ")
+}
+
+object Config {
+  implicit def varToConfig(v: BoundVariable) = Config(Set(v))
+  def apply(vs: BoundVariable*): Config = Config(vs.toSet)
 }
