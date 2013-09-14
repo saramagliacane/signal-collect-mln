@@ -1,34 +1,5 @@
 package com.signalcollect.mln
 
-object Variable {
-  def apply(name: String) = new UnboundVariable(name)
-  def apply(name: String, value: Any) = new BoundVariable(name, value)
-}
-
-trait Variable {
-  def name: String
-  def bind(value: Any) = new BoundVariable(name, value)
-  def unbound = new UnboundVariable(name)
-}
-
-case class UnboundVariable(name: String) extends Variable
-
-case class BoundVariable(name: String, value: Any) extends Variable
-
-/**
- * A configuration consists of a set of bound variables and
- * represents a possible outcome in the context of a probability
- * distribution.
- */
-case class Config(boundVars: Set[BoundVariable]) {
-  def combine(other: Config) = Config(boundVars.union(other.boundVars))
-  /**
-   * Requires for the variable to be part of this configuration.
-   */
-  def getVariable(name: String): BoundVariable =
-    boundVars.filter(_.name == name).head
-}
-
 object Distribution {
 
   implicit def stringToVar(name: String): UnboundVariable = Variable(name)
@@ -54,15 +25,21 @@ object Distribution {
 case class Distribution(
     f: Factor[Config] = Factor[Config]()) {
 
+  /**
+   * Returns the probability of this configuration.
+   */
+  def apply(c: Config) = f(c)
+
+  def unary_! = Distribution(!f)
   def *(that: Distribution) = join(that)(_ * _)
   def /(that: Distribution) = join(that)(_ / _)
   def +(that: Distribution) = join(that)(_ + _)
   def -(that: Distribution) = join(that)(_ - _)
-  def ||(that: Distribution) = join(that)(SoftBool.||)
-  def &&(that: Distribution) = join(that)(SoftBool.&&)
-  def ->(that: Distribution) = join(that)(SoftBool.->)
-  def <->(that: Distribution) = join(that)(SoftBool.<->)
-  
+  def ||(that: Distribution) = join(that)(SoftBool.or)
+  def &&(that: Distribution) = join(that)(SoftBool.and)
+  def ->(that: Distribution) = join(that)(SoftBool.implies)
+  def <->(that: Distribution) = join(that)(SoftBool.equivalent)
+
   /**
    * Creates a joint distribution and merges probabilities with the
    * function @param op.

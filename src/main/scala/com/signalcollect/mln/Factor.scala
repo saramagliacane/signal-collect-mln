@@ -65,13 +65,13 @@ case class Factor[Value](
    * as 1 and false as 0.
    */
   def ||(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.||)
+    forValues(union(that), that, SoftBool.or)
   def &&(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.&&)
+    forValues(union(that), that, SoftBool.and)
   def ->(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.->)
+    forValues(union(that), that, SoftBool.implies)
   def <->(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.<->)
+    forValues(union(that), that, SoftBool.equivalent)
   def unary_!(): Factor[Value] = {
     val newMappings = map flatMap {
       case (value, probability) =>
@@ -112,20 +112,7 @@ case class Factor[Value](
 
   protected def union(that: Factor[Value]): Set[Value] =
     map.keySet.union(that.map.keySet)
+
+  override def toString = map.mkString("\n\t", "\n\t", "\n")
 }
 
-object SoftBool {
-  def not(a: Double) = 1 - a
-  def ||(a: Double, b: Double) = math.min(1, a + b)
-  def &&(a: Double, b: Double) = math.max(0, a + b - 1)
-  def ->(a: Double, b: Double) = ||(not(a), b)
-  def <->(a: Double, b: Double) = &&((->(a, b)), ->(a, b))
-}
-
-case class SoftBool(value: Double) extends AnyVal {
-  def unary_! = SoftBool(SoftBool.not(value))
-  def ||(other: SoftBool) = SoftBool(SoftBool.||(value, other.value))
-  def &&(other: SoftBool) = SoftBool(SoftBool.&&(value, other.value))
-  def ->(other: SoftBool) = SoftBool(SoftBool.->(value, other.value))
-  def <->(other: SoftBool) = SoftBool(SoftBool.<->(value, other.value))
-}
