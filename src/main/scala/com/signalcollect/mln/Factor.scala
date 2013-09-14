@@ -1,11 +1,11 @@
 package com.signalcollect.mln
 
 /**
- * Represents a function from instances of Value to Doubles > 0.
- * This function is stored inside the map @param map and the 
+ * Represents a function from instances of Value to Doubles >= 0.
+ * This function is stored inside the map @param map and the
  * function returns 0 for parameters that are not stored in the map.
- * 
- * Factors are immutable and operations on them return new factors. 
+ *
+ * Factors are immutable and operations on them return new factors.
  */
 case class Factor[Value](
   val map: Map[Value, Double] = Map[Value, Double]())
@@ -76,7 +76,8 @@ case class Factor[Value](
     val newMappings = map flatMap {
       case (value, probability) =>
         val newP = 1 - probability
-        if (newP > 0) {
+        // Only store probabilities >= 0.
+        if (newP >= 0) {
           Some((value, newP))
         } else {
           None
@@ -92,8 +93,8 @@ case class Factor[Value](
     val newMappings = values flatMap {
       value =>
         val newP = op(this(value), that(value))
-        // Only store positive probabilities. 
-        if (newP > 0) {
+        // Only store probabilities >= 0.
+        if (newP >= 0) {
           Some((value, newP))
         } else {
           None
