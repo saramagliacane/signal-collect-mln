@@ -33,7 +33,9 @@ object Distribution {
 
   implicit def stringToVar(name: String): UnboundVariable = Variable(name)
 
-  def bernoulli(name: String, probabilitySuccess: Double): Distribution = {
+  def bernoulli(
+    name: String,
+    probabilitySuccess: Double): Distribution = {
     val varTrue = Variable(name, true)
     val varFalse = Variable(name, false)
     val probabilityFailure = 1 - probabilitySuccess
@@ -65,7 +67,9 @@ case class Distribution(
    * Creates a joint distribution and merges probabilities with the
    * function @param op.
    */
-  protected def join(that: Distribution)(op: (Double, Double) => Double): Distribution = {
+  protected def join(
+    that: Distribution)(
+      op: (Double, Double) => Double): Distribution = {
     if (this.equals(JoinIdentity)) that
     else if (that.equals(JoinIdentity)) this
     else {
