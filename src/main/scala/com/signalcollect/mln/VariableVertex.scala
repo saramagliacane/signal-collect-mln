@@ -10,5 +10,5 @@ import com.signalcollect._
 class VariableVertex[Id](id: Id, initialState: Distribution)
     extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
-  def collect = signals.reduce(_ join _)
+  def collect = signals.reduce(_ * _)
 }

@@ -26,6 +26,8 @@ case class Config(boundVars: Set[BoundVariable]) {
 
 object Distribution {
 
+  implicit def stringToVar(name: String): UnboundVariable = Variable(name)
+  
   def bernoulli(name: String, probabilitySuccess: Double): Distribution = {
     val varTrue = Variable(name, true)
     val varFalse = Variable(name, false)
@@ -40,16 +42,20 @@ object Distribution {
 case class Distribution(
     val f: Factor[Config] = Factor[Config]()) {
 
-  def *(that: Distribution) = Distribution(f * that.f)
-  def /(that: Distribution) = Distribution(f / that.f)
-  def +(that: Distribution) = Distribution(f + that.f)
-  def -(that: Distribution) = Distribution(f - that.f)
+  def *(that: Distribution) = join(that)(_ * _)
+  def /(that: Distribution) = join(that)(_ / _)
+  def +(that: Distribution) = join(that)(_ + _)  
+  def -(that: Distribution) = join(that)(_ - _)
+  def ||(that: Distribution) = join(that)(SoftBool.||)
+  def &&(that: Distribution) = join(that)(SoftBool.&&)
+  def ->(that: Distribution) = join(that)(SoftBool.->)
+  def <->(that: Distribution) = join(that)(SoftBool.<->)
 
   /**
-   * Creates a joint distribution under the assumption that @this and
-   * @that are independent.
+   * Creates a joint distribution and merges probabilities with the
+   * function @param op.
    */
-  def join(that: Distribution): Distribution = {
+  protected def join(that: Distribution)(op: (Double, Double) => Double): Distribution = {
     if (this.equals(JoinIdentity)) that
     else if (that.equals(JoinIdentity)) this
     else {
@@ -58,7 +64,7 @@ case class Distribution(
         config2 <- that.f.probabilities.keys
       } yield (
         config1.combine(config2),
-        f.probabilities(config1) * that.f.probabilities(config2))
+        op(f.probabilities(config1), that.f.probabilities(config2)))
       Distribution(Factor(composite.toMap))
     }
   }
@@ -66,7 +72,7 @@ case class Distribution(
   /**
    * Returns the marginal distribution for @variable.
    */
-  def marginalDistribution(variable: Variable): Distribution = {
+  def marginalFor(variable: Variable): Distribution = {
     val groupedByBinding = f.probabilities.groupBy {
       case (config, probability) => config.getVariable(variable.name)
     }
@@ -76,4 +82,8 @@ case class Distribution(
     Distribution(Factor(marginalProbabilities.toMap))
   }
 
+}
+
+object JoinIdentity extends Factor {
+  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
 }

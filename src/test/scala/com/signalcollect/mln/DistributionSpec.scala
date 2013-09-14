@@ -15,8 +15,8 @@ class DistributionSpec extends SpecificationWithJUnit with Serializable {
     "marginalize correctly" in {
       val distA = bernoulli("a", 0.6)
       val distB = bernoulli("b", 0.9)
-      val joint = distA.join(distB)
-      val aMarginalized = joint.marginalDistribution(Variable("a"))
+      val joint = distA * distB
+      val aMarginalized = joint.marginalFor("a")
       aMarginalized === distA
     }
 

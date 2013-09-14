@@ -38,39 +38,63 @@ case class Factor[Value](
   }
 
   def *(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ * _, MultiplicativeIdentity.forType[Factor[Value]])
+    forValues(intersection(that), that, _ * _)
   }
 
   def /(that: Factor[Value]): Factor[Value] = {
-    forValues(intersection(that), that, _ / _, MultiplicativeIdentity.forType[Factor[Value]])
+    forValues(intersection(that), that, _ / _)
   }
 
   def +(that: Factor[Value]): Factor[Value] = {
-    forValues(union(that), that, _ + _, AdditiveIdentity.forType[Factor[Value]])
+    forValues(union(that), that, _ + _)
   }
 
   def -(that: Factor[Value]): Factor[Value] = {
-    forValues(union(that), that, _ - _, AdditiveIdentity.forType[Factor[Value]])
+    forValues(union(that), that, _ - _)
+  }
+
+  /**
+   * Correspond to boolean logic operations when true is represented
+   * as 1 and false as 0.
+   */
+  def ||(that: Factor[Value]): Factor[Value] =
+    forValues(union(that), that, SoftBool.||)
+  def &&(that: Factor[Value]): Factor[Value] =
+    forValues(union(that), that, SoftBool.&&)
+  def ->(that: Factor[Value]): Factor[Value] =
+    forValues(union(that), that, SoftBool.->)
+  def <->(that: Factor[Value]): Factor[Value] =
+    forValues(union(that), that, SoftBool.<->)
+  def unary_!(): Factor[Value] = {
+    val newProbabilities = probabilities flatMap {
+      case (value, probability) =>
+        val newP = 1 - probability
+        if (newP > 0) {
+          Some((value, newP))
+        } else {
+          None
+        }
+    }
+    Factor(newProbabilities.toMap)
   }
 
   private def forValues(
     values: Set[Value],
     that: Factor[Value],
-    op: (Double, Double) => Double,
-    neutral: Factor[Value]): Factor[Value] = {
-    if (this.equals(neutral)) that
-    else if (that.equals(neutral)) this
-    else {
-      val newProbabilities = values map {
-        value =>
-          val p1 = probabilities.get(value).getOrElse(0.0)
-          val p2 = that.probabilities.get(value).getOrElse(0.0)
-          val newP = op(p1, p2)
-          assert(newP >= 0)
-          (value, newP)
-      }
-      Factor(newProbabilities.toMap)
+    op: (Double, Double) => Double): Factor[Value] = {
+    val newProbabilities = values flatMap {
+      value =>
+        val p1 = probabilities.get(value).getOrElse(0.0)
+        val p2 = that.probabilities.get(value).getOrElse(0.0)
+        val newP = op(p1, p2)
+        // Only store positive probabilities. 
+        if (newP > 0) {
+          Some((value, newP))
+        } else {
+          None
+        }
     }
+    Factor(newProbabilities.toMap)
   }
 
   def isNormalized = math.abs(sum - 1.0) < 0.000001
@@ -82,17 +106,20 @@ case class Factor[Value](
 
   protected def union(that: Factor[Value]): Set[Value] =
     probabilities.keySet.union(that.probabilities.keySet)
-
 }
 
-object JoinIdentity extends Factor {
-  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
+object SoftBool {
+  def not(a: Double) = 1 - a
+  def ||(a: Double, b: Double) = math.min(1, a + b)
+  def &&(a: Double, b: Double) = math.max(0, a + b - 1)
+  def ->(a: Double, b: Double) = ||(not(a), b)
+  def <->(a: Double, b: Double) = &&((->(a, b)), ->(a, b))
 }
 
-object MultiplicativeIdentity extends Factor(Map().withDefaultValue(1)) {
-  def forType[T <: Factor[_]] = MultiplicativeIdentity.asInstanceOf[T]
-}
-
-object AdditiveIdentity extends Factor(Map().withDefaultValue(0)) {
-  def forType[T <: Factor[_]] = AdditiveIdentity.asInstanceOf[T]
+case class SoftBool(value: Double) extends AnyVal {
+  def unary_! = SoftBool(SoftBool.not(value))
+  def ||(other: SoftBool) = SoftBool(SoftBool.||(value, other.value))
+  def &&(other: SoftBool) = SoftBool(SoftBool.&&(value, other.value))
+  def ->(other: SoftBool) = SoftBool(SoftBool.->(value, other.value))
+  def <->(other: SoftBool) = SoftBool(SoftBool.<->(value, other.value))
 }
