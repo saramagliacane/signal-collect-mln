@@ -49,6 +49,8 @@ class FactorSpec extends SpecificationWithJUnit with Serializable {
       shouldBeA2("a") must beApproximately(fA2("a"))
     }
 
+    
+    //TODO: Add tests for logic stuff.
   }
 
   def beApproximately(x: Double) = beCloseTo(x, 0.000000001)
