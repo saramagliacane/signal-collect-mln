@@ -59,6 +59,21 @@ case class Distribution(
     Distribution(Factor(marginalProbabilities.toMap))
   }
 
+  /**
+   * Delegate equals directly to map.
+   */
+  override def equals(other: Any): Boolean = {
+    other match {
+      case d: Distribution => f.map.equals(d.f.map)
+      case other           => false
+    }
+  }
+
+  /**
+   * Delegate hashCode directly to map.
+   */
+  override def hashCode = f.map.hashCode
+
 }
 
 object Distribution {
