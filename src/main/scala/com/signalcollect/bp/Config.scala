@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 /**
  * A configuration consists of a set of bound variables and

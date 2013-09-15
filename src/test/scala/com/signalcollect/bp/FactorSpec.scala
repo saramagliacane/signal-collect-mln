@@ -1,9 +1,11 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 import org.junit.runner.RunWith
 import org.specs2.mutable.SpecificationWithJUnit
 import org.specs2.runner.JUnitRunner
+
 import Distribution._
+
 import org.specs2.matcher.Matcher
 
 @RunWith(classOf[JUnitRunner])

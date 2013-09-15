@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 import com.signalcollect._
 
@@ -7,8 +7,9 @@ import com.signalcollect._
  * @param id
  * @param initialState
  */
-class FactorVertex[Id](id: Id, initialState: Distribution)
+class FactorVertex(id: Int, initialState: Distribution = JoinIdentity)
     extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
   def collect = signals.reduce(_ * _)
+  def signalMap = mostRecentSignalMap
 }

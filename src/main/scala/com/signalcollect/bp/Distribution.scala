@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 /**
  * Represents a function from configurations to their potentially
@@ -75,6 +75,4 @@ object Distribution {
 
 }
 
-object JoinIdentity extends Factor {
-  def forType[T <: Factor[_]] = JoinIdentity.asInstanceOf[T]
-}
+object JoinIdentity extends Distribution

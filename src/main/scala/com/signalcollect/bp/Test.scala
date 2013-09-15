@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 import com.signalcollect._
 

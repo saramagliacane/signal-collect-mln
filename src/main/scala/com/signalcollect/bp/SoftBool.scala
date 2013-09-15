@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 object SoftBool {
   implicit def doubleToSoftBool(d: Double) = SoftBool(d)

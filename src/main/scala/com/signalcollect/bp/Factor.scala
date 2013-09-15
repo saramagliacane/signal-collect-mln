@@ -1,4 +1,4 @@
-package com.signalcollect.mln
+package com.signalcollect.bp
 
 /**
  * Represents a function from instances of Value to Doubles >= 0.
