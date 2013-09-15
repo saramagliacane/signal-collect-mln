@@ -10,6 +10,13 @@ import com.signalcollect._
 class VariableVertex(id: String, initialState: Distribution)
     extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
-  def collect = signals.reduce(_ * _)
+  def collect = signals.reduce(_ + _)
   def signalMap = mostRecentSignalMap
 }
+
+//class VariableVertex(id: String, initialState: Distribution)
+//    extends DataGraphVertex(id, initialState) {
+//  type Signal = Distribution
+//  def collect = signals.reduce(_ * _)
+//  def signalMap = mostRecentSignalMap
+//}

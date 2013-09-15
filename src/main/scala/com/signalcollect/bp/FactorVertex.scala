@@ -10,6 +10,13 @@ import com.signalcollect._
 class FactorVertex(id: Int, initialState: Distribution = JoinIdentity)
     extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
-  def collect = signals.reduce(_ * _)
+  def collect = signals.reduce(_ + _)
   def signalMap = mostRecentSignalMap
 }
+
+//class FactorVertex(id: Int, initialState: Distribution = JoinIdentity)
+//    extends DataGraphVertex(id, initialState) {
+//  type Signal = Distribution
+//  def collect = signals.reduce(_ * _)
+//  def signalMap = mostRecentSignalMap
+//}

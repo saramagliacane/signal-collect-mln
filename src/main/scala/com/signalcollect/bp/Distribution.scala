@@ -13,6 +13,9 @@ case class Distribution(
    */
   def apply(c: Config) = f(c)
 
+  def normalize = Distribution(f.normalize)
+  def isNormalized = f.isNormalized
+
   def unary_! = Distribution(!f)
   def *(that: Distribution) = join(that)(_ * _)
   def /(that: Distribution) = join(that)(_ / _)
