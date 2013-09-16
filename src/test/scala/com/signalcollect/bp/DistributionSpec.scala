@@ -67,6 +67,6 @@ class DistributionSpec extends FlatSpec with ShouldMatchers {
   }
 
   // TODO: Factor into TestHelper class.
-  def beApproximately(x: Double) = be(x +- 0.000000001)
+  def beApproximately(x: Double) = be (x +- 0.000000001)
 
 }
