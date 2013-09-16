@@ -18,3 +18,5 @@ project/plugins/project/
 .settings/org.scala-ide.sdt.core.prefs
 
 .cache
+
+log_messages.txt

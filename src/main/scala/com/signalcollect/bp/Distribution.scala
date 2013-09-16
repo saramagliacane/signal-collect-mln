@@ -6,7 +6,8 @@ package com.signalcollect.bp
  * @param f.
  */
 case class Distribution(
-    f: Factor[Config] = Factor[Config]()) {
+  f: Factor[Config] = Factor[Config]())
+    extends Function1[Config, Double] {
 
   /**
    * Returns the probability of this configuration.
@@ -74,6 +75,8 @@ case class Distribution(
    */
   override def hashCode = f.map.hashCode
 
+  override def toString = s"Distribution(${f.toString})"
+  
 }
 
 object Distribution {

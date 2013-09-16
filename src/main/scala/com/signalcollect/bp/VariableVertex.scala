@@ -7,16 +7,20 @@ import com.signalcollect._
  * @param id
  * @param initialState
  */
-class LogVariableVertex(id: String, initialState: Distribution)
-  extends DataGraphVertex(id, initialState) {
+class LogVariableVertex(id: String,
+                        initialState: Distribution,
+                        val isEvidence: Boolean)
+    extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
   def collect = signals.reduce(_ + _)
   def signalMap = mostRecentSignalMap
 }
 
-class VariableVertex(id: String, initialState: Distribution)
-  extends DataGraphVertex(id, initialState) {
+class VariableVertex(id: String,
+                     initialState: Distribution,
+                     isEvidence: Boolean)
+    extends DataGraphVertex(id, initialState) {
   type Signal = Distribution
-  def collect = signals.reduce(_ * _)
+  def collect = if (isEvidence) initialState else signals.reduce(_ * _)
   def signalMap = mostRecentSignalMap
 }
