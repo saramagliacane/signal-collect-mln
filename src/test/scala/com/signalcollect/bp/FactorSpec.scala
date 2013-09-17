@@ -49,7 +49,7 @@ class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
     "(for small numbers)" in {
       check(
         (f1: Factor[Int], f2: Factor[Int]) =>
-          (f1 + f2 - f2) approximatelyEquals f1,
+          (f1 + f2 - f2).purge("a") approximatelyEquals f1.purge(),
         minSuccessful(200))
     }
 
