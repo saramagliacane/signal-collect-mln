@@ -3,21 +3,13 @@ package com.signalcollect.bp
 import org.scalatest._
 import org.scalacheck.Arbitrary
 import org.scalatest.prop.Checkers
+import org.scalacheck.Gen
 
 class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
 
   val fA1 = Factor() + ("a", 0.4)
   val fA2 = Factor() + ("a", 0.1)
   val fB = Factor() + ("b", 0.1)
-
-  "Factor" should "normalize correctly for one value" in {
-    fA1.normalize("a") should be(1.0)
-  }
-
-  it should "normalize correctly for two values" in {
-    val fAB = fA1 + fB
-    fAB.normalize("a") should beApproximately(0.8)
-  }
 
   it should "support addition" in {
     val fAadded = fA1 + fA2
@@ -42,10 +34,9 @@ class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
     shouldBeA2("a") should beApproximately(fA2("a"))
   }
 
-  implicit def arbitrayFactor = Arbitrary(
-    Arbitrary.arbitrary[Map[Int, Double]]
-      map (Factor(_).normalize)
-      suchThat (f => f.map.values.forall(_ > 0)))
+  val smallInteger = Gen.choose(0, 5)
+  val smallDouble = Gen.choose(0, 1.0)
+  implicit def smallMap = Arbitrary(Arbitrary.arbImmutableMap(Arbitrary(smallInteger), Arbitrary(smallDouble)).arbitrary map (Factor(_)))
 
   it should "support commutative addition" in {
     check(
@@ -78,7 +69,7 @@ class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
           } else {
             true
           },
-        minSuccessful(500))
+        minSuccessful(200))
     }
 
   //TODO: Add tests for logic stuff.

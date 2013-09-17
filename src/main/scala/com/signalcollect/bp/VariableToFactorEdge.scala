@@ -16,6 +16,7 @@ class LogVariableToFactorEdge[Id](targetId: Id) extends DefaultEdge(targetId) {
 
 class VariableToFactorEdge[Id](targetId: Id) extends DefaultEdge(targetId) {
   type Source = VariableVertex
+  // TODO: Add normalization.
   // TODO: Evaluate using sum of logarithms instead.
   // TODO: Make div by 0 case more efficient and DRY with other edge.
   def signal = {
@@ -30,9 +31,9 @@ class VariableToFactorEdge[Id](targetId: Id) extends DefaultEdge(targetId) {
             } else {
               acc
             }
-        }.normalize
+        }
       } else {
-        (source.state / influenceFromTarget.get).normalize
+        (source.state / influenceFromTarget.get)
       }
     } else {
       source.state

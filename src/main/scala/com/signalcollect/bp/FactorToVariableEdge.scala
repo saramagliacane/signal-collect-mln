@@ -16,6 +16,7 @@ class LogFactorToVariableEdge(targetId: String) extends DefaultEdge(targetId) {
 
 class FactorToVariableEdge(targetId: String) extends DefaultEdge(targetId) {
   type Source = FactorVertex
+  // TODO: Add normalization.
   // TODO: Support evidence.
   // TODO: Evaluate using sum of logarithms instead. 
   // TODO: Make div by 0 case more efficient and DRY with other edge.
@@ -35,9 +36,9 @@ class FactorToVariableEdge(targetId: String) extends DefaultEdge(targetId) {
       } else {
         source.state / influenceFromTarget.get
       }
-      distWithoutTargetInfluence.marginalFor(Variable(targetId)).normalize
+      distWithoutTargetInfluence.marginalFor(Variable(targetId))
     } else {
-      source.state.marginalFor(Variable(targetId)).normalize
+      source.state.marginalFor(Variable(targetId))
     }
   }
 }

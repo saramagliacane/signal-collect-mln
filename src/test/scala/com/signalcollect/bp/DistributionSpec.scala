@@ -18,6 +18,17 @@ class DistributionSpec extends FlatSpec with ShouldMatchers {
   val bTrue = "b" boundTo true
   val bFalse = "b" boundTo false
 
+  // TODO: Add and test normalization.
+  
+//  "Factor" should "normalize correctly for one value" in {
+//    fA1.normalize("a") should be(1.0)
+//  }
+//
+//  it should "normalize correctly for two values" in {
+//    val fAB = fA1 + fB
+//    fAB.normalize("a") should beApproximately(0.8)
+//  }
+  
   "Distribution" should "marginalize correctly" in {
     val joint = distX * distY
     val xMarginalized = joint.marginalFor("x")

@@ -1,54 +1,30 @@
 package com.signalcollect.bp
 
 /**
- * Represents a function from instances of Value to Doubles > 0.
- * This function is stored inside the map @param map and the
- * function returns 0 for parameters that are not stored in the map.
+ * Represents a partial function from instances of Domain to Doubles.
+ * This function is stored inside the map @param map.
  *
  * Factors are immutable and operations on them return new factors.
  */
-case class Factor[Value](
-  map: Map[Value, Double] = Map[Value, Double]())
-    extends Function1[Value, Double] {
+case class Factor[Domain](
+  val map: Map[Domain, Double] = Map[Domain, Double]())
+  extends PartialFunction[Domain, Double] {
+
+  def validInputs: Set[Domain] = map.keySet
+
+  def isDefinedAt(input: Domain) = map.keySet.contains(input)
 
   /**
    * Creates a new factor that returns @param result for parameter
    * @param parameter.
    */
-  def +(parameter: Value, result: Double): Factor[Value] = {
-    assert(result > eps)
-    Factor(map + ((parameter, result)))
+  def +(input: Domain, output: Double): Factor[Domain] = {
+    Factor(map + ((input, output)))
   }
 
-  def apply(e: Value): Double = map.get(e).getOrElse(eps)
+  def apply(input: Domain): Double = map(input)
 
-  def normalize: Factor[Value] = {
-    if (!isNormalized) {
-      val probabilitySum = map.values.sum
-      val newMappings = {
-        if (probabilitySum == 0) {
-          val uniformEventProbability = 1.0 / map.size
-          map map {
-            case (event, _) =>
-              (event, uniformEventProbability)
-          }
-        } else {
-          map map {
-            case (value, unnormalizedMapping) =>
-              val newMapping = unnormalizedMapping / probabilitySum
-              if (newMapping > eps) {
-                (value, newMapping)
-              } else {
-                (value, eps)
-              }
-          }
-        }
-      }
-      Factor(newMappings)
-    } else {
-      this
-    }
-  }
+  def get(input: Domain): Option[Double] = map.get(input)
 
   /**
    * These operations correspond to combining the results for each factor
@@ -58,60 +34,57 @@ case class Factor[Value](
    *           f3 = f1 * f2
    *           f3(a) = 0.5 * 0.2 = 0.1
    */
-  def *(that: Factor[Value]) = forValues(intersection(that), that, _ * _)
-  def /(that: Factor[Value]) = forValues(intersection(that), that, _ / _)
-  def +(that: Factor[Value]) = forValues(union(that), that, _ + _)
-  def -(that: Factor[Value]) = forValues(union(that), that, _ - _)
+  def *(that: Factor[Domain]) = forInputs(intersection(that), that, Ops.*)
+  def *(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.*)
+
+  def /(that: Factor[Domain]) = forInputs(intersection(that), that, Ops./)
+  def /(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops./)
+
+  def +(that: Factor[Domain]) = forInputs(union(that), that, Ops.+)
+  def +(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.+)
+
+  def -(that: Factor[Domain]) = forInputs(union(that), that, Ops.-)
+  def -(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.-)
 
   /**
    * These operations correspond to boolean logic operations when true is
    * represented as 1 and false as 0.
    */
-  def ||(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.or)
-  def &&(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.and)
-  def ->(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.implies)
-  def <->(that: Factor[Value]): Factor[Value] =
-    forValues(union(that), that, SoftBool.equivalent)
-  def unary_!(): Factor[Value] = {
+  def ||(that: Factor[Domain]) = forInputs(union(that), that, Ops.or)
+  def ||(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.or)
+  def &&(that: Factor[Domain]) = forInputs(union(that), that, Ops.and)
+  def &&(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.and)
+  def ->(that: Factor[Domain]) = forInputs(union(that), that, Ops.implies)
+  def ->(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.implies)
+  def <->(that: Factor[Domain]) = forInputs(union(that), that, Ops.equivalent)
+  def <->(that: PartialFunction[Domain, Double]) = forInputs(map.keySet, that, Ops.equivalent)
+  def unary_!() = {
     val newMappings = map map {
-      case (value, probability) =>
-        val newP = 1 - probability
-        // Only store probabilities > 0.
-        if (newP > eps) {
-          (value, newP)
-        } else {
-          (value, eps)
-        }
+      case (input, output) =>
+        val newOutput = 1 - output
+        (input, newOutput)
     }
     Factor(newMappings.toMap)
   }
 
-  private def forValues(
-    values: Set[Value],
-    that: Factor[Value],
-    op: (Double, Double) => Double): Factor[Value] = {
-    val newMappings = values map {
-      value =>
-        val newP = op(this(value), that(value))
-        // Only store probabilities > 0.
-        if (newP > eps) {
-          (value, newP)
-        } else {
-          (value, eps)
-        }
+  private def forInputs(
+    inputs: Set[Domain],
+    that: PartialFunction[Domain, Double],
+    op: (Option[Double], Option[Double]) => Option[Double]): Factor[Domain] = {
+    val newMappings = inputs flatMap {
+      input =>
+        val thisOutput = map.get(input)
+        val thatOutput = if (that.isDefinedAt(input)) Some(that(input)) else None
+        val newOutput = op(thisOutput, thatOutput)
+        newOutput map ((input, _))
     }
     Factor(newMappings.toMap)
   }
 
-  private def eps = 0.000001
-
-  def approximatelyEquals(other: Factor[Value]) = {
-      def approximatelyEqual(a: Double, b: Double) = {
-        math.abs(a - b) < eps
-      }
+  def approximatelyEquals(other: Factor[Domain], eps: Double = 0.000001) = {
+    def approximatelyEqual(a: Double, b: Double) = {
+      math.abs(a - b) < eps
+    }
     val all = intersection(other)
     all.size == map.size && all.size == other.map.size && all.forall {
       k => approximatelyEqual(other(k), this(k))
@@ -119,14 +92,13 @@ case class Factor[Value](
 
   }
 
-  def isNormalized = math.abs(sum - 1.0) < eps
+  lazy val sum = map.values.sum
+  lazy val isAllOutputPositive = map.values.forall(_ >= 0)
 
-  private lazy val sum = map.values.sum
-
-  protected def intersection(that: Factor[Value]): Set[Value] =
+  protected def intersection(that: Factor[Domain]): Set[Domain] =
     map.keySet.intersect(that.map.keySet)
 
-  protected def union(that: Factor[Value]): Set[Value] =
+  protected def union(that: Factor[Domain]): Set[Domain] =
     map.keySet.union(that.map.keySet)
 
   override def toString = map.mkString("\n\t", "\n\t", "\n")

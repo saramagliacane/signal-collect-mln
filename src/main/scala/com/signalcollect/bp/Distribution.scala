@@ -7,25 +7,43 @@ package com.signalcollect.bp
  */
 case class Distribution(
   f: Factor[Config] = Factor[Config]())
-    extends Function1[Config, Double] {
+  extends PartialFunction[Config, Double] {
 
   /**
    * Returns the probability of this configuration.
    */
   def apply(c: Config) = f(c)
 
-  def normalize = Distribution(f.normalize)
-  def isNormalized = f.isNormalized
+  def isDefinedAt(input: Config) = f.isDefinedAt(input)
+
+  def configs: Set[Config] = f.validInputs
 
   def unary_! = Distribution(!f)
-  def *(that: Distribution) = join(that)(_ * _)
-  def /(that: Distribution) = join(that)(_ / _)
-  def +(that: Distribution) = join(that)(_ + _)
-  def -(that: Distribution) = join(that)(_ - _)
-  def ||(that: Distribution) = join(that)(SoftBool.or)
-  def &&(that: Distribution) = join(that)(SoftBool.and)
-  def ->(that: Distribution) = join(that)(SoftBool.implies)
-  def <->(that: Distribution) = join(that)(SoftBool.equivalent)
+  def +(that: Distribution) = join(that)(Ops.+)
+  def -(that: Distribution) = join(that)(Ops.-)
+  def *(that: Distribution) = join(that)(Ops.*)
+  def /(that: Distribution) = join(that)(Ops./)
+  def ||(that: Distribution) = join(that)(Ops.or)
+  def &&(that: Distribution) = join(that)(Ops.and)
+  def ->(that: Distribution) = join(that)(Ops.implies)
+  def <->(that: Distribution) = join(that)(Ops.equivalent)
+
+  def isNormalized(eps: Double = 0.000001) = math.abs(f.sum - 1.0) < eps
+
+  def normalize: Distribution = {
+    val sum = f.sum
+    assert(sum != 0 && f.isAllOutputPositive)
+    if (!isNormalized()) {
+      val newMappings = f.map map {
+        case (value, unnormalizedOutput) =>
+          val newMapping = unnormalizedOutput / sum
+          (value, newMapping)
+      }
+      Distribution(Factor(newMappings.toMap))
+    } else {
+      this
+    }
+  }
 
   /**
    * Creates a joint distribution and merges probabilities with the
@@ -33,16 +51,17 @@ case class Distribution(
    */
   protected def join(
     that: Distribution)(
-      op: (Double, Double) => Double): Distribution = {
+      op: (Option[Double], Option[Double]) => Option[Double]): Distribution = {
     if (this.equals(JoinIdentity)) that
     else if (that.equals(JoinIdentity)) this
     else {
       val composite = for {
-        config1 <- f.map.keys
-        config2 <- that.f.map.keys
+        config1 <- configs
+        config2 <- that.configs
+        composedOutput <- op(f.get(config1), that.f.get(config2))
       } yield (
         config1.combine(config2),
-        op(f(config1), that.f(config2)))
+        composedOutput)
       Distribution(Factor(composite.toMap))
     }
   }
@@ -66,7 +85,7 @@ case class Distribution(
   override def equals(other: Any): Boolean = {
     other match {
       case d: Distribution => f.map.equals(d.f.map)
-      case other           => false
+      case other => false
     }
   }
 
