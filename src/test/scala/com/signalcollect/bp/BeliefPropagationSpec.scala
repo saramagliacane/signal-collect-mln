@@ -10,13 +10,17 @@ class BeliefPropagationSpec
     with ShouldMatchers
     with Checkers {
 
-  val aTrueDist = bernoulli("a", 1)
-  val bUnknownDist = bernoulli("b", 0.5)
-  val implicationDist = bernoulli("a", 1) -> bernoulli("b", 1)
+  val aTrue = Distribution(Factor(Map(
+    Config(Variable("a", true)) -> 1)))
+  val aFairlyCertain = bernoulli("a", 1)
+  val bTrue = Distribution(Factor(Map(
+    Config(Variable("b", true)) -> 1)))
+  val bUnknown = bernoulli("b", 0.5)
+  val implicationDist = aTrue -> bTrue
 
   val g = GraphBuilder.build
-  val varA = new VariableVertex("a", aTrueDist, isEvidence = true)
-  val varB = new VariableVertex("b", bUnknownDist, isEvidence = false)
+  val varA = new VariableVertex("a", aFairlyCertain, isEvidence = true)
+  val varB = new VariableVertex("b", bUnknown, isEvidence = false)
   g.addVertex(varA)
   g.addVertex(varB)
   val aThenB = new FactorVertex("aThenB", JoinIdentity, implicationDist)

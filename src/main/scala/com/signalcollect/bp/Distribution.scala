@@ -76,7 +76,7 @@ case class Distribution(
   override def hashCode = f.map.hashCode
 
   override def toString = s"Distribution(${f.toString})"
-  
+
 }
 
 object Distribution {

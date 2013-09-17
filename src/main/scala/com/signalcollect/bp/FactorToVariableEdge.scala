@@ -4,10 +4,13 @@ import com.signalcollect.DefaultEdge
 
 class LogFactorToVariableEdge(targetId: String) extends DefaultEdge(targetId) {
   type Source = LogFactorVertex
-  // TODO: Support evidence.
   def signal = {
-    val distWithoutTarget = source.state - source.signalMap(targetId)
-    distWithoutTarget.marginalFor(Variable(targetId))
+    val targetInfluence = source.signalMap.get(targetId)
+    if (targetInfluence.isDefined) {
+      (source.state - targetInfluence.get).marginalFor(Variable(targetId))
+    } else {
+      source.state.marginalFor(Variable(targetId))
+    }
   }
 }
 

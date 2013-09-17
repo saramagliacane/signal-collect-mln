@@ -9,8 +9,8 @@ package com.signalcollect.bp
  */
 case class Factor[Value](
   map: Map[Value, Double] = Map[Value, Double]())
-  extends Function1[Value, Double] {
-  
+    extends Function1[Value, Double] {
+
   /**
    * Creates a new factor that returns @param result for parameter
    * @param parameter.
@@ -20,7 +20,7 @@ case class Factor[Value](
     Factor(map + ((parameter, result)))
   }
 
-  def apply(e: Value): Double = map.get(e).getOrElse(0)
+  def apply(e: Value): Double = map.get(e).getOrElse(eps)
 
   def normalize: Factor[Value] = {
     if (!isNormalized) {
@@ -33,13 +33,13 @@ case class Factor[Value](
               (event, uniformEventProbability)
           }
         } else {
-          map flatMap {
+          map map {
             case (value, unnormalizedMapping) =>
               val newMapping = unnormalizedMapping / probabilitySum
               if (newMapping > eps) {
-                Some(value, newMapping)
+                (value, newMapping)
               } else {
-                None
+                (value, eps)
               }
           }
         }
@@ -76,14 +76,14 @@ case class Factor[Value](
   def <->(that: Factor[Value]): Factor[Value] =
     forValues(union(that), that, SoftBool.equivalent)
   def unary_!(): Factor[Value] = {
-    val newMappings = map flatMap {
+    val newMappings = map map {
       case (value, probability) =>
         val newP = 1 - probability
         // Only store probabilities > 0.
         if (newP > eps) {
-          Some((value, newP))
+          (value, newP)
         } else {
-          None
+          (value, eps)
         }
     }
     Factor(newMappings.toMap)
@@ -93,14 +93,14 @@ case class Factor[Value](
     values: Set[Value],
     that: Factor[Value],
     op: (Double, Double) => Double): Factor[Value] = {
-    val newMappings = values flatMap {
+    val newMappings = values map {
       value =>
         val newP = op(this(value), that(value))
         // Only store probabilities > 0.
         if (newP > eps) {
-          Some((value, newP))
+          (value, newP)
         } else {
-          None
+          (value, eps)
         }
     }
     Factor(newMappings.toMap)
@@ -109,9 +109,9 @@ case class Factor[Value](
   private def eps = 0.000001
 
   def approximatelyEquals(other: Factor[Value]) = {
-    def approximatelyEqual(a: Double, b: Double) = {
-      math.abs(a - b) < eps
-    }
+      def approximatelyEqual(a: Double, b: Double) = {
+        math.abs(a - b) < eps
+      }
     val all = intersection(other)
     all.size == map.size && all.size == other.map.size && all.forall {
       k => approximatelyEqual(other(k), this(k))
