@@ -7,9 +7,7 @@ package com.signalcollect.bp
  */
 case class Distribution(
   f: Factor[Config] = Factor[Config]())
-    extends Function1[Config, Double] {
-
-  implicit def eps = 0.000001
+  extends Function1[Config, Double] {
 
   /**
    * Returns the probability of this configuration.
@@ -91,7 +89,7 @@ case class Distribution(
   override def equals(other: Any): Boolean = {
     other match {
       case d: Distribution => f.map.equals(d.f.map)
-      case other           => false
+      case other => false
     }
   }
 
@@ -105,6 +103,8 @@ case class Distribution(
 }
 
 object Distribution {
+
+  implicit def eps = 0.000001
 
   implicit def stringToVar(name: String): UnboundVariable = Variable(name)
 

@@ -4,6 +4,7 @@ import org.scalatest._
 import org.scalacheck.Arbitrary
 import org.scalatest.prop.Checkers
 import org.scalacheck.Gen
+import Factor._
 
 class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
 
@@ -11,7 +12,7 @@ class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
   val fA2 = Factor() + ("a", 0.1)
   val fB = Factor() + ("b", 0.1)
 
-  it should "support addition" in {
+  "Factor" should "support addition" in {
     val fAadded = fA1 + fA2
     fAadded("a") should beApproximately(0.5)
   }
@@ -49,7 +50,7 @@ class FactorSpec extends FlatSpec with ShouldMatchers with Checkers {
     "(for small numbers)" in {
       check(
         (f1: Factor[Int], f2: Factor[Int]) =>
-          (f1 + f2 - f2).purge("a") approximatelyEquals f1.purge(),
+          (f1 + f2 - f2).purge approximatelyEquals f1.purge,
         minSuccessful(200))
     }
 

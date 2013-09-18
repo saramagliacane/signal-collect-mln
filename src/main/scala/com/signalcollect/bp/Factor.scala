@@ -8,9 +8,12 @@ package com.signalcollect.bp
  */
 case class Factor[Domain](
   val map: Map[Domain, Double] = Map[Domain, Double]())
-    extends PartialFunction[Domain, Double] {
+  extends PartialFunction[Domain, Double] {
 
-  def purge(a: String)(implicit eps: Double) = Factor(map.filter(_._2 < eps))
+  /**
+   * Returns a new factor with all outputs < @param eps removed.
+   */
+  def purge(implicit eps: Double) = Factor(map.filter(_._2 > eps))
 
   def validInputs: Set[Domain] = map.keySet
 
@@ -84,9 +87,9 @@ case class Factor[Domain](
   }
 
   def approximatelyEquals(other: Factor[Domain], eps: Double = 0.000001) = {
-      def approximatelyEqual(a: Double, b: Double) = {
-        math.abs(a - b) < eps
-      }
+    def approximatelyEqual(a: Double, b: Double) = {
+      math.abs(a - b) < eps
+    }
     val all = intersection(other)
     all.size == map.size && all.size == other.map.size && all.forall {
       k => approximatelyEqual(other(k), this(k))
